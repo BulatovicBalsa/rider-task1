@@ -25,21 +25,21 @@ public static class TupleLiteralRewriter
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(typeName);
 
+        return (Block)RewriteStmt(root);
+
         Stmt RewriteStmt(Stmt s) => s switch
         {
-            VarDecl v => v with { Init = RewriteExpr(v.Init) },
-            Return r  => r with { Value = RewriteExpr(r.Value) },
-            Block b   => b with { Statements = b.Statements.Select(RewriteStmt).ToArray() },
+            VarDecl v => new VarDecl(v.Name, RewriteExpr(v.Init)),
+            Return r  => new Return(RewriteExpr(r.Value)),
+            Block b   => new Block(b.Statements.Select(RewriteStmt).ToArray()),
             _         => s
         };
 
         Expr RewriteExpr(Expr e) => e switch
         {
             TupleLiteral t => new NewExpr(typeName, t.Elements.Select(RewriteExpr).ToArray()),
-            NewExpr n      => n with { Args = n.Args.Select(RewriteExpr).ToArray() },
+            NewExpr n      => new NewExpr(n.TypeName, n.Args.Select(RewriteExpr).ToArray()),
             _              => e
         };
-
-        return (Block)RewriteStmt(root);
     }
 }
